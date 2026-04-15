@@ -159,3 +159,29 @@ docs/
 - For scanned PDFs, page images are used for model inference.
 - Bill `computed_total` is row-sum based; `reported_total` comes from document totals.
 - Deep technical internals are documented in `docs/architecture-and-internals.md`.
+
+## Design Trade-offs
+
+- **Graph-based orchestration vs single prompt**
+  - Chosen: LangGraph multi-node pipeline for explicit control and debuggability.
+  - Trade-off: more code and state management complexity in exchange for clearer routing, better observability, and easier testing.
+
+- **Specialized extractors vs one general extractor**
+  - Chosen: three dedicated extraction agents (ID, Discharge, Itemized Bill).
+  - Trade-off: more prompts/schemas to maintain, but significantly better separation of concerns and tighter field-level contracts.
+
+- **Multimodal page processing vs text-only extraction**
+  - Chosen: text + rendered page images to support scanned PDFs.
+  - Trade-off: higher inference cost/latency compared with text-only, but materially better real-world coverage for insurance documents.
+
+- **Fail-fast `503` on unusable segregation vs silent fallback success**
+  - Chosen: return `503 upstream_model_unavailable` when classifier output is unusable.
+  - Trade-off: stricter client handling requirements, but prevents false positives and protects downstream data integrity.
+
+- **TDD-first delivery speed vs short-term iteration speed**
+  - Chosen: test-first workflow with unit/integration/e2e layers.
+  - Trade-off: higher initial implementation overhead, but safer refactors and much higher confidence under model/prompt changes.
+
+- **Schema-constrained output vs flexible free-form extraction**
+  - Chosen: Pydantic-validated structured response contracts.
+  - Trade-off: occasional coercion/normalization logic required, but improved API stability for consumers and easier regression testing.
